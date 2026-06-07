@@ -1,7 +1,7 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart' hide Card;
-import 'package:path_provider/path_provider.dart';
+import 'cookies_stub.dart'
+    if (dart.library.io) 'cookies_io.dart'
+    if (dart.library.web) 'cookies_web.dart';
 
 import 'pimp.dart';
 import 'brd.dart';
@@ -79,10 +79,8 @@ class _MonopolyAppState extends State<MonopolyApp> {
               password: int password,
             ):
               () async {
-                File storageFile = File(
-                  '${(await getApplicationDocumentsDirectory()).path}user.txt',
-                );
-                storageFile.writeAsStringSync('$player\n$password');
+                setCookie('playerID', player.toString());
+                setCookie('password', password.toString());
               }();
             case PIMPQueryJoinObserveMessage(
               candidateID: int candidateID,
@@ -438,13 +436,9 @@ class _MonopolyAppState extends State<MonopolyApp> {
         });
       });
       print('connected ${client.gameID}!');
-      File storageFile = File(
-        '${(await getApplicationDocumentsDirectory()).path}user.txt',
-      );
-      if (storageFile.existsSync()) {
-        List<String> lines = storageFile.readAsLinesSync();
-        int playerID = int.parse(lines.first);
-        int password = int.parse(lines.last);
+      int? playerID = int.tryParse(await getCookie('playerID') ?? '');
+      int? password = int.tryParse(await getCookie('password') ?? '');
+      if (playerID != null && password != null) {
         PIMPMessage response = await client.sendMessage(
           PIMPRejoinMessage(playerID, password),
           [0xfe, 0x0b, 0xf4],
