@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart' hide Card;
 import 'cookies_stub.dart'
     if (dart.library.io) 'cookies_io.dart'
-    if (dart.library.web) 'cookies_web.dart';
+    if (dart.library.js_interop) 'cookies_web.dart';
 
 import 'pimp.dart';
 import 'brd.dart';
@@ -67,7 +67,7 @@ class _MonopolyAppState extends State<MonopolyApp> {
   @override
   void initState() {
     super.initState();
-    PIMPClient.connect('hixie.ch:13220').then((PIMPClient client) async {
+    PIMPClient.connect(serverURL).then((PIMPClient client) async {
       setState(() {
         this.client = client;
       });
@@ -78,6 +78,9 @@ class _MonopolyAppState extends State<MonopolyApp> {
               player: int player,
               password: int password,
             ):
+              this.player = player;
+              loggedIn = true;
+              joinPending = false;
               () async {
                 setCookie('playerID', player.toString());
                 setCookie('password', password.toString());
@@ -298,6 +301,10 @@ class _MonopolyAppState extends State<MonopolyApp> {
               newPlayer: int newPlayer,
               property: int property,
             ):
+
+              if (newPlayer == 0) {
+                ownedProperties.remove(property);
+              }
               ownedProperties[property] ??= Property(property, 0, false, 0, 0);
               ownedProperties[property]!.owner = newPlayer;
             case PIMPDeltaPropertyMortgagedMessage(property: int property):
@@ -769,6 +776,19 @@ class _MonopolyAppState extends State<MonopolyApp> {
                                         },
                                         child: Text('Request trade'),
                                       ),
+
+                                    OutlinedButton(
+                                      onPressed: () async {
+                                        print(
+                                          await client!.sendMessage(
+                                            PIMPKickMessage(player.id),
+                                            [0xfe, 0xfc],
+                                            true,
+                                          ),
+                                        );
+                                      },
+                                      child: Text('Kick'),
+                                    ),
                                     Wrap(
                                       children: [
                                         for (Property property

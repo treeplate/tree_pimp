@@ -1,3 +1,5 @@
+String serverURL = 'STUB';
+
 /// A cache of cookies that have been saved for use synchronously. This is updated by [getCookie] and [setCookie], and possibly other things too.
 Map<String, String> cookieCache = {};
 

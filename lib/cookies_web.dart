@@ -1,5 +1,7 @@
 import 'package:web/web.dart';
 
+String serverURL = 'ws://localhost:23220';
+
 Map<String, String> cookieCache = {};
 
 Future<String?> getCookie(String name) async {

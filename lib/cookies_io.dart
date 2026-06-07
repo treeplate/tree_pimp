@@ -1,6 +1,9 @@
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 
+String serverURL = 'hixie.ch:13220';
+
+
 File? _cookieStorage;
 Map<String, String> cookieCache = {};
 bool cookiesCached = false;

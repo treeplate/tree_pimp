@@ -8,6 +8,9 @@ class Socket {
 
   static Future<Socket> connect(String url) async {
     WebSocket webSocket = WebSocket(url);
+    webSocket.onError.listen((Event event) {
+      print(event);
+    });
     await webSocket.onOpen.first;
     return Socket(webSocket);
   }
@@ -28,6 +31,6 @@ class Socket {
   }
 
   void add(List<int> data) {
-    _webSocket.send(Blob(data.map<JSAny>((e) => e.toJS).toList().toJS));
+    _webSocket.send(Uint8List.fromList(data).buffer.toJS);
   }
 }

@@ -17,9 +17,9 @@ class IntegerPIMPMessageValue extends PIMPMessageValue {
 
   @override
   Iterable<int> serialize() {
-    ByteData data = ByteData(8);
-    data.setUint64(0, value, Endian.big);
-    return data.buffer.asUint8List().skip(8 - length);
+    ByteData data = ByteData(4);
+    data.setUint32(0, value, Endian.big);
+    return data.buffer.asUint8List().skip(4 - length);
   }
 
   IntegerPIMPMessageValue(this.value, this.length);
@@ -3152,6 +3152,25 @@ class PIMPErrorTransactionPropertyHasHouseMessage extends PIMPMessage {
     this.transactionID,
     this.property,
   );
+  @override
+  bool get isNotification => true;
+}
+
+class PIMPKickMessage extends PIMPMessage {
+  @override
+  PIMPMessageType get type => 0xd3;
+
+  final int player;
+
+  @override
+  String toString() => 'kick<player $player>';
+
+  @override
+  List<PIMPMessageValue> get values => [
+    IntegerPIMPMessageValue(player, 1),
+  ];
+
+  PIMPKickMessage(this.player);
   @override
   bool get isNotification => true;
 }
