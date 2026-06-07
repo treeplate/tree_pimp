@@ -33,7 +33,7 @@ const Map<PropertyType, Color> propertyColors = {
   .yellow: Colors.yellow,
   .green: Colors.green,
   .lightBlue: Colors.lightBlue,
-  .darkBlue: Colors.blue,
+  .darkBlue: Colors.blueAccent,
   .purple: Colors.purple,
   .pink: Colors.pink,
   .railroad: Colors.blueGrey,
