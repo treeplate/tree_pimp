@@ -1,6 +1,6 @@
 import 'package:web/web.dart';
 
-String serverURL = 'ws://localhost:23220';
+String serverURL = 'ws://ceylon:23220';
 
 Map<String, String> cookieCache = {};
 
@@ -15,7 +15,7 @@ Future<String?> getCookie(String name) async {
 void setCookie(String name, String? value) {
   if (value == null) {
     window.localStorage.removeItem(name);
-    cookieCache.remove(name);
+    cookieCache.remove(name); 
   } else {
     window.localStorage.setItem(name, value);
     cookieCache[name] = value;

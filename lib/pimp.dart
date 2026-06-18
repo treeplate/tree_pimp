@@ -3213,9 +3213,6 @@ class PIMPClient {
               print(
                 'response: ${await sendMessage(PIMPErrorUnexpectedMessageMessage(message.type), [0xfe])}',
               );
-              sendMessage(PIMPErrorUnexpectedMessageMessage(message.type), [
-                0xfe,
-              ]);
             } else {
               responseMessage!.complete(message);
             }
