@@ -1447,7 +1447,6 @@ class _TransactionWidgetState extends State<TransactionWidget> {
       top: y,
       child: GestureDetector(
         onPanUpdate: (DragUpdateDetails details) {
-          print('moo');
           setState(() {
             x += details.delta.dx;
             y += details.delta.dy;
