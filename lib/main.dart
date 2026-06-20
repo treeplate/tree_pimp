@@ -723,9 +723,13 @@ class _MonopolyAppState extends State<MonopolyApp> {
                                                         'Close dialog',
                                                       ),
                                                     ),
-                                                    Text('Bid:'),
+                                                    Text('Bidding for ${propertyName(propertyForSale!)}'),
+                                                    Text('Your money: \$${players[player]!.cash}'),
+                                                    Text('Last bid: \$$lastBid by ${players[lastBidder]!.name}'),
+                                                    Text('Bid (press enter to bid):'),
                                                     TextField(
                                                       onSubmitted: (value) async {
+                                                        Navigator.pop(context);
                                                         print(
                                                           await client!
                                                               .sendMessage(
@@ -790,11 +794,11 @@ class _MonopolyAppState extends State<MonopolyApp> {
                                         children: [
                                           if (showPiece)
                                             Text(
-                                              'Player ${player.name} uses piece ${player.piece}, and has cash ${player.cash}.',
+                                              'Player ${player.name} uses piece ${player.piece}, and has \$${player.cash}.',
                                             )
                                           else
                                             Text(
-                                              'Player ${player.name} has cash ${player.cash}.',
+                                              'Player ${player.name} has \$${player.cash}.',
                                             ),
                                           if (player.id != this.player)
                                             OutlinedButton(
