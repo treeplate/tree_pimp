@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart' hide Card;
 import 'cookies_stub.dart'
     if (dart.library.io) 'cookies_io.dart'
@@ -1467,6 +1469,12 @@ class _TransactionWidgetState extends State<TransactionWidget> {
       left: x,
       top: y,
       child: GestureDetector(
+        supportedDevices: {
+          PointerDeviceKind.touch,
+          PointerDeviceKind.mouse,
+          PointerDeviceKind.stylus,
+          PointerDeviceKind.invertedStylus,
+        },
         onPanUpdate: (DragUpdateDetails details) {
           setState(() {
             x += details.delta.dx;
