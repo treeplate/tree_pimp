@@ -507,13 +507,6 @@ class _MonopolyAppState extends State<MonopolyApp> {
                                 height: 200,
                                 child: ListView(
                                   children: [
-                                    // BuyHousesButton(
-                                    //   board: board,
-                                    //   ownedProperties: ownedProperties,
-                                    //   player: player,
-                                    //   players: players,
-                                    //   client: client,
-                                    // ),
                                     if (!players.containsKey(player))
                                       OutlinedButton(
                                         onPressed: () async {
@@ -565,7 +558,18 @@ class _MonopolyAppState extends State<MonopolyApp> {
                                         child: Text('Refuse'),
                                       ),
                                     ],
-
+                                    if (board != null)
+                                      BuyHousesButton(
+                                        board: board!,
+                                        ownedProperties: ownedProperties,
+                                        player: player,
+                                        players: players,
+                                        client: client,
+                                        canBuyHouses:
+                                            turn != player ||
+                                            state != .rollDice &&
+                                                state != .rollDiceJail,
+                                      ),
                                     if (turn == player)
                                       ...switch (state) {
                                         null => [CircularProgressIndicator()],
@@ -582,14 +586,6 @@ class _MonopolyAppState extends State<MonopolyApp> {
                                             },
                                             child: Text('Roll dice'),
                                           ),
-                                          if (board != null)
-                                            BuyHousesButton(
-                                              board: board,
-                                              ownedProperties: ownedProperties,
-                                              player: player,
-                                              players: players,
-                                              client: client,
-                                            ),
                                         ],
                                         .buyProperty => [
                                           Center(
@@ -723,10 +719,18 @@ class _MonopolyAppState extends State<MonopolyApp> {
                                                         'Close dialog',
                                                       ),
                                                     ),
-                                                    Text('Bidding for ${propertyName(propertyForSale!)}'),
-                                                    Text('Your money: \$${players[player]!.cash}'),
-                                                    Text('Last bid: \$$lastBid by ${players[lastBidder]!.name}'),
-                                                    Text('Bid (press enter to bid):'),
+                                                    Text(
+                                                      'Bidding for ${propertyName(propertyForSale!)}',
+                                                    ),
+                                                    Text(
+                                                      'Your money: \$${players[player]!.cash}',
+                                                    ),
+                                                    Text(
+                                                      'Last bid: \$$lastBid by ${players[lastBidder]!.name}',
+                                                    ),
+                                                    Text(
+                                                      'Bid (press enter to bid):',
+                                                    ),
                                                     TextField(
                                                       onSubmitted: (value) async {
                                                         Navigator.pop(context);
@@ -960,7 +964,7 @@ class _MonopolyAppState extends State<MonopolyApp> {
       case .buyProperty:
         return 'buy or auction ${propertyName(propertyForSale!)}';
       case .propertyAuction:
-        return 'participate in a property auction';
+        return 'auction ${propertyName(propertyForSale!)}';
       case .transaction:
         return 'finish a transaction with the bank';
       case .taxSelectOption:
@@ -981,13 +985,15 @@ class BuyHousesButton extends StatelessWidget {
     required this.player,
     required this.players,
     required this.client,
+    required this.canBuyHouses,
   });
 
-  final Board? board;
+  final Board board;
   final Map<int, Property> ownedProperties;
   final int? player;
   final Map<int, Player> players;
   final PIMPClient? client;
+  final bool canBuyHouses;
 
   @override
   Widget build(BuildContext context) {
@@ -1011,7 +1017,7 @@ class BuyHousesButton extends StatelessWidget {
                         if (type == .railroad || type == .utility) {
                           return false;
                         }
-                        Iterable<int> properties = board!.properties
+                        Iterable<int> properties = board.properties
                             .where(
                               (BoardProperty property) => property.type == type,
                             )
@@ -1028,6 +1034,7 @@ class BuyHousesButton extends StatelessWidget {
                           player: player,
                           client: client,
                           type: type,
+                          canBuyHouses: canBuyHouses,
                         );
                       }),
                 ],
@@ -1050,6 +1057,7 @@ class BuyHousesColorWidget extends StatefulWidget {
     required this.player,
     required this.client,
     required this.type,
+    required this.canBuyHouses,
   });
   final Map<int, Property> ownedProperties;
   final Board? board;
@@ -1057,6 +1065,7 @@ class BuyHousesColorWidget extends StatefulWidget {
   final int? player;
   final PIMPClient? client;
   final PropertyType type;
+  final bool canBuyHouses;
 
   @override
   State<BuyHousesColorWidget> createState() => _BuyHousesColorWidgetState();
@@ -1090,24 +1099,32 @@ class _BuyHousesColorWidgetState extends State<BuyHousesColorWidget> {
                     Row(
                       children: [
                         IconButton(
-                          onPressed: () {
-                            if (houses[property.id]! > 0) {
-                              setState(() {
-                                houses[property.id] = houses[property.id]! - 1;
-                              });
-                            }
-                          },
+                          onPressed: houses[property.id]! > 0
+                              ? () {
+                                  setState(() {
+                                    houses[property.id] =
+                                        houses[property.id]! - 1;
+                                  });
+                                }
+                              : null,
                           icon: Icon(Icons.remove),
                         ),
                         Text(houses[property.id].toString()),
                         IconButton(
-                          onPressed: () {
-                            if (houses[property.id]! < 5) {
-                              setState(() {
-                                houses[property.id] = houses[property.id]! + 1;
-                              });
-                            }
-                          },
+                          onPressed:
+                              ((widget.canBuyHouses ||
+                                      houses[property.id]! <
+                                          (property.hotels == 0
+                                              ? property.houses
+                                              : property.hotels + 4)) &&
+                                  houses[property.id]! < 5)
+                              ? () {
+                                  setState(() {
+                                    houses[property.id] =
+                                        houses[property.id]! + 1;
+                                  });
+                                }
+                              : null,
                           icon: Icon(Icons.add),
                         ),
                       ],
@@ -1473,9 +1490,7 @@ class _TransactionWidgetState extends State<TransactionWidget> {
                 for (int card in widget.transaction.cards)
                   Text('You are offering card $card.'),
                 if (widget.transaction.otherCash != null)
-                  Text(
-                    'They are offering \$${widget.transaction.otherCash}.',
-                  ),
+                  Text('They are offering \$${widget.transaction.otherCash}.'),
                 for (int property in widget.transaction.otherProperties)
                   Text('They are offering property $property.'),
                 for (int card in widget.transaction.otherCards)
@@ -1629,7 +1644,7 @@ class _TransactionWidgetState extends State<TransactionWidget> {
                                   child: Text('Close dialog'),
                                 ),
                                 Text('Offer cash:'),
-            
+
                                 TextField(
                                   onSubmitted: (value) async {
                                     print(
