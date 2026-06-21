@@ -70,6 +70,8 @@ class _MonopolyAppState extends State<MonopolyApp> {
   int? lastRoller;
   int? die1;
   int? die2;
+  int? lastCardReceiver;
+  int? cardReceived;
   List<int> passedSquares = [];
   List<int> landedSquares = [];
   bool startOfTurn = false;
@@ -470,6 +472,9 @@ class _MonopolyAppState extends State<MonopolyApp> {
               lastRoller = playerID;
               this.die1 = die1;
               this.die2 = die2;
+            case PIMPGotCardMessage(card: int card, player: int player):
+              lastCardReceiver = player;
+              cardReceived = card;
             default:
               print(message);
           }
@@ -583,6 +588,10 @@ class _MonopolyAppState extends State<MonopolyApp> {
                                         child: Text('Refuse'),
                                       ),
                                     ],
+                                    if (lastCardReceiver != null)
+                                      Text(
+                                        '${players[lastCardReceiver]?.name ?? 'Player $lastCardReceiver'} received card ${board == null ? '$cardReceived' : '"${board!.cards[cardReceived!]}"'}',
+                                      ),
                                     if (lastRoller != null)
                                       Text(
                                         '${players[lastRoller]?.name ?? 'Player $lastRoller'} rolled a $die1 and a $die2.',
@@ -906,6 +915,7 @@ class _MonopolyAppState extends State<MonopolyApp> {
                                                 card: card,
                                                 players: players,
                                                 client: client,
+                                                board: board,
                                               ),
                                         ],
                                       ),
@@ -1589,13 +1599,17 @@ class _TransactionWidgetState extends State<TransactionWidget> {
                     'You are offering ${widget.board == null ? 'property $property' : widget.board!.properties[property].name}.',
                   ),
                 for (int card in widget.transaction.cards)
-                  Text('You are offering card $card.'),
+                  Text(
+                    'You are offering card ${widget.board == null ? '$card' : '"${widget.board!.cards[card]}"'}',
+                  ),
                 if (widget.transaction.otherCash != null)
                   Text('They are offering \$${widget.transaction.otherCash}.'),
                 for (int property in widget.transaction.otherProperties)
                   Text('They are offering property $property.'),
                 for (int card in widget.transaction.otherCards)
-                  Text('They are offering card $card.'),
+                  Text(
+                    'They are offering card ${widget.board == null ? '$card' : '"${widget.board!.cards[card]}"'}.',
+                  ),
                 if (widget.transaction.unusual)
                   Text('This is an unusual transaction.'),
                 if (widget.transaction.otherAgreed)
@@ -1728,21 +1742,27 @@ class _TransactionWidgetState extends State<TransactionWidget> {
                                       card: card,
                                       players: widget.players,
                                       client: widget.client,
+                                      board: widget.board,
                                     ),
-                                    OutlinedButton(
-                                      onPressed: () async {
-                                        print(
-                                          await widget.client.sendMessage(
-                                            PIMPTransactionAddCardMessage(
-                                              widget.transaction.transactionID,
-                                              card.id,
+                                    Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: OutlinedButton(
+                                        onPressed: () async {
+                                          print(
+                                            await widget.client.sendMessage(
+                                              PIMPTransactionAddCardMessage(
+                                                widget
+                                                    .transaction
+                                                    .transactionID,
+                                                card.id,
+                                              ),
+                                              [0xfe, 0xe5, 0xfc],
+                                              true,
                                             ),
-                                            [0xfe, 0xe5, 0xfc],
-                                            true,
-                                          ),
-                                        );
-                                      },
-                                      child: Text('Offer'),
+                                          );
+                                        },
+                                        child: Text('Offer'),
+                                      ),
                                     ),
                                   ],
                                 ],
@@ -1903,15 +1923,21 @@ class CardWidget extends StatelessWidget {
     required this.card,
     required this.players,
     required this.client,
+    required this.board,
   });
 
   final Card card;
   final Map<int, Player> players;
   final PIMPClient? client;
+  final Board? board;
 
   @override
   Widget build(BuildContext context) {
-    return Center(child: Text('Card ${card.id}'));
+    return Center(
+      child: Text(
+        'Card ${board == null ? '${card.id}' : '"${board!.cards[card.id]}"'}',
+      ),
+    );
   }
 }
 

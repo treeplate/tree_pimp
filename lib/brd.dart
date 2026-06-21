@@ -104,9 +104,17 @@ class BoardProperty {
   }
 }
 
+class BoardCard {
+  final int id;
+  final String name;
+
+  BoardCard(this.id, this.name);
+}
+
 class Board {
   final List<Square> squares;
   final List<BoardProperty> properties;
+  final List<BoardCard> cards;
 
   String getName(int squareID) {
     Square square = squares[squareID];
@@ -117,7 +125,7 @@ class Board {
     }
   }
 
-  Board(this.squares, this.properties);
+  Board(this.squares, this.properties, this.cards);
 }
 
 Future<Board> getBoard(int boardID) async {
@@ -125,8 +133,10 @@ Future<Board> getBoard(int boardID) async {
   List<String> parts = rawBoard.split('\n\n');
   int squareCounter = 0;
   int propertyCounter = 0;
+  int cardCounter = 0;
   return Board(
     parts[0].split('\n').map((e) => Square.parse(squareCounter++, e)).toList(),
     parts[1].split('\n').map((e) => BoardProperty.parse(propertyCounter++, e)).toList(),
+    parts[2].split('\n').map((e) => BoardCard(cardCounter++, e)).toList(),
   );
 }
