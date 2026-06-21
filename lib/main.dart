@@ -738,46 +738,57 @@ class _MonopolyAppState extends State<MonopolyApp> {
                                             context: context,
                                             builder: (context) {
                                               return Dialog(
-                                                child: Column(
-                                                  children: [
-                                                    OutlinedButton(
-                                                      onPressed: () {
-                                                        Navigator.pop(context);
-                                                      },
-                                                      child: Text(
-                                                        'Close dialog',
+                                                child: Padding(
+                                                  padding: const EdgeInsets.all(
+                                                    8.0,
+                                                  ),
+                                                  child: Column(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      OutlinedButton(
+                                                        onPressed: () {
+                                                          Navigator.pop(
+                                                            context,
+                                                          );
+                                                        },
+                                                        child: Text(
+                                                          'Close dialog',
+                                                        ),
                                                       ),
-                                                    ),
-                                                    Text(
-                                                      'Bidding for ${propertyName(propertyForSale!)}',
-                                                    ),
-                                                    Text(
-                                                      'Your money: \$${players[player]!.cash}',
-                                                    ),
-                                                    Text(
-                                                      'Last bid: \$$lastBid by ${players[lastBidder]!.name}',
-                                                    ),
-                                                    Text(
-                                                      'Bid (press enter to bid):',
-                                                    ),
-                                                    TextField(
-                                                      onSubmitted: (value) async {
-                                                        Navigator.pop(context);
-                                                        print(
-                                                          await client!
-                                                              .sendMessage(
-                                                                PIMPBidMessage(
-                                                                  int.parse(
-                                                                    value,
+                                                      Text(
+                                                        'Bidding for ${propertyName(propertyForSale!)}',
+                                                      ),
+                                                      Text(
+                                                        'Your money: \$${players[player]!.cash}',
+                                                      ),
+                                                      Text(
+                                                        'Last bid: \$$lastBid by ${players[lastBidder]!.name}',
+                                                      ),
+                                                      Text(
+                                                        'Bid (press enter to bid):',
+                                                      ),
+                                                      TextField(
+                                                        onSubmitted: (value) async {
+                                                          Navigator.pop(
+                                                            context,
+                                                          );
+                                                          print(
+                                                            await client!
+                                                                .sendMessage(
+                                                                  PIMPBidMessage(
+                                                                    int.parse(
+                                                                      value,
+                                                                    ),
                                                                   ),
+                                                                  [0xfe],
+                                                                  true,
                                                                 ),
-                                                                [0xfe],
-                                                                true,
-                                                              ),
-                                                        );
-                                                      },
-                                                    ),
-                                                  ],
+                                                          );
+                                                        },
+                                                      ),
+                                                    ],
+                                                  ),
                                                 ),
                                               );
                                             },
@@ -855,17 +866,20 @@ class _MonopolyAppState extends State<MonopolyApp> {
                                               child: Text('Request trade'),
                                             ),
 
-                                          OutlinedButton(
-                                            onPressed: () async {
-                                              print(
-                                                await client!.sendMessage(
-                                                  PIMPKickMessage(player.id),
-                                                  [0xfe, 0xfc],
-                                                  true,
-                                                ),
-                                              );
-                                            },
-                                            child: Text('Kick'),
+                                          Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: OutlinedButton(
+                                              onPressed: () async {
+                                                print(
+                                                  await client!.sendMessage(
+                                                    PIMPKickMessage(player.id),
+                                                    [0xfe, 0xfc],
+                                                    true,
+                                                  ),
+                                                );
+                                              },
+                                              child: Text('Kick'),
+                                            ),
                                           ),
                                           Wrap(
                                             children: [
@@ -1038,41 +1052,46 @@ class BuyHousesButton extends StatelessWidget {
           context: context,
           builder: (context) {
             return Dialog(
-              child: Column(
-                children: [
-                  OutlinedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: Text('Close dialog'),
-                  ),
-                  Text(canBuyHouses ? 'Buy/sell houses:' : 'Sell houses:'),
-                  ...PropertyType.values
-                      .where((PropertyType type) {
-                        if (type == .railroad || type == .utility) {
-                          return false;
-                        }
-                        Iterable<int> properties = board.properties
-                            .where(
-                              (BoardProperty property) => property.type == type,
-                            )
-                            .map((e) => e.id);
-                        return properties.every(
-                          (e) => ownedProperties[e]?.owner == player,
-                        );
-                      })
-                      .map((PropertyType type) {
-                        return BuyHousesColorWidget(
-                          ownedProperties: ownedProperties,
-                          board: board,
-                          players: players,
-                          player: player,
-                          client: client,
-                          type: type,
-                          canBuyHouses: canBuyHouses,
-                        );
-                      }),
-                ],
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    OutlinedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      child: Text('Close dialog'),
+                    ),
+                    Text(canBuyHouses ? 'Buy/sell houses:' : 'Sell houses:'),
+                    ...PropertyType.values
+                        .where((PropertyType type) {
+                          if (type == .railroad || type == .utility) {
+                            return false;
+                          }
+                          Iterable<int> properties = board.properties
+                              .where(
+                                (BoardProperty property) =>
+                                    property.type == type,
+                              )
+                              .map((e) => e.id);
+                          return properties.every(
+                            (e) => ownedProperties[e]?.owner == player,
+                          );
+                        })
+                        .map((PropertyType type) {
+                          return BuyHousesColorWidget(
+                            ownedProperties: ownedProperties,
+                            board: board,
+                            players: players,
+                            player: player,
+                            client: client,
+                            type: type,
+                            canBuyHouses: canBuyHouses,
+                          );
+                        }),
+                  ],
+                ),
               ),
             );
           },
@@ -1390,35 +1409,39 @@ class PropertyWidget extends StatelessWidget {
                       context: context,
                       builder: (context) {
                         return Dialog(
-                          child: Column(
-                            children: [
-                              OutlinedButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                },
-                                child: Text('Close dialog'),
-                              ),
-                              Text('Claim rent:'),
-                              for (Player player in players.values)
-                                if (player.id != this.player)
-                                  OutlinedButton(
-                                    onPressed: () async {
-                                      print(
-                                        await client.sendMessage(
-                                          PIMPClaimRentMessage(
-                                            player.id,
-                                            propertyID,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                OutlinedButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                  child: Text('Close dialog'),
+                                ),
+                                Text('Claim rent:'),
+                                for (Player player in players.values)
+                                  if (player.id != this.player)
+                                    OutlinedButton(
+                                      onPressed: () async {
+                                        print(
+                                          await client.sendMessage(
+                                            PIMPClaimRentMessage(
+                                              player.id,
+                                              propertyID,
+                                            ),
+                                            [0xfe, 0xfc, 0xe0],
+                                            true,
                                           ),
-                                          [0xfe, 0xfc, 0xe0],
-                                          true,
-                                        ),
-                                      );
-                                    },
-                                    child: Text(
-                                      'Claim rent from player ${player.name}',
+                                        );
+                                      },
+                                      child: Text(
+                                        'Claim rent from player ${player.name}',
+                                      ),
                                     ),
-                                  ),
-                            ],
+                              ],
+                            ),
                           ),
                         );
                       },
@@ -1582,14 +1605,114 @@ class _TransactionWidgetState extends State<TransactionWidget> {
                 else
                   Text('Other player has not finished.'),
                 if (!widget.transaction.finished) ...[
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: OutlinedButton(
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) {
+                            return Dialog(
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: SingleChildScrollView(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      OutlinedButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text('Close dialog'),
+                                      ),
+                                      Text('Offer property:'),
+                                      for (Property property
+                                          in widget.ownedProperties.values
+                                              .where(
+                                                (e) => e.owner == widget.player,
+                                              )) ...[
+                                        SizedBox(
+                                          width: 150,
+                                          child: PropertyWidget(
+                                            propertyID: property.id,
+                                            property: property,
+                                            player: widget.player,
+                                            players: widget.players,
+                                            board: widget.board,
+                                            client: widget.client,
+                                          ),
+                                        ),
+                                        widget.transaction.properties.contains(
+                                              property.id,
+                                            )
+                                            ? Padding(
+                                                padding: const EdgeInsets.all(
+                                                  8.0,
+                                                ),
+                                                child: OutlinedButton(
+                                                  onPressed: () async {
+                                                    print(
+                                                      await widget.client
+                                                          .sendMessage(
+                                                            PIMPTransactionRemovePropertyMessage(
+                                                              widget
+                                                                  .transaction
+                                                                  .transactionID,
+                                                              property.id,
+                                                            ),
+                                                            [0xfe, 0xfc],
+                                                            true,
+                                                          ),
+                                                    );
+                                                  },
+                                                  child: Text('Do not offer'),
+                                                ),
+                                              )
+                                            : Padding(
+                                                padding: const EdgeInsets.all(
+                                                  8.0,
+                                                ),
+                                                child: OutlinedButton(
+                                                  onPressed: () async {
+                                                    print(
+                                                      await widget.client
+                                                          .sendMessage(
+                                                            PIMPTransactionAddPropertyMessage(
+                                                              widget
+                                                                  .transaction
+                                                                  .transactionID,
+                                                              property.id,
+                                                            ),
+                                                            [0xfe, 0xe5, 0xfc],
+                                                            true,
+                                                          ),
+                                                    );
+                                                  },
+                                                  child: Text('Offer'),
+                                                ),
+                                              ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                      child: Text('Offer property'),
+                    ),
+                  ),
                   OutlinedButton(
                     onPressed: () {
                       showDialog(
                         context: context,
                         builder: (context) {
                           return Dialog(
-                            child: SingleChildScrollView(
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
                               child: Column(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   OutlinedButton(
                                     onPressed: () {
@@ -1597,65 +1720,30 @@ class _TransactionWidgetState extends State<TransactionWidget> {
                                     },
                                     child: Text('Close dialog'),
                                   ),
-                                  Text('Offer property:'),
-                                  for (Property property
-                                      in widget.ownedProperties.values.where(
-                                        (e) => e.owner == widget.player,
-                                      )) ...[
-                                    SizedBox(
-                                      width: 150,
-                                      child: PropertyWidget(
-                                        propertyID: property.id,
-                                        property: property,
-                                        player: widget.player,
-                                        players: widget.players,
-                                        board: widget.board,
-                                        client: widget.client,
-                                      ),
+                                  Text('Offer card:'),
+                                  for (Card card in widget.cards.values.where(
+                                    (e) => e.owner == widget.player,
+                                  )) ...[
+                                    CardWidget(
+                                      card: card,
+                                      players: widget.players,
+                                      client: widget.client,
                                     ),
-                                    widget.transaction.properties.contains(
-                                          property.id,
-                                        )
-                                        ? Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: OutlinedButton(
-                                              onPressed: () async {
-                                                print(
-                                                  await widget.client.sendMessage(
-                                                    PIMPTransactionRemovePropertyMessage(
-                                                      widget
-                                                          .transaction
-                                                          .transactionID,
-                                                      property.id,
-                                                    ),
-                                                    [0xfe, 0xfc],
-                                                    true,
-                                                  ),
-                                                );
-                                              },
-                                              child: Text('Do not offer'),
+                                    OutlinedButton(
+                                      onPressed: () async {
+                                        print(
+                                          await widget.client.sendMessage(
+                                            PIMPTransactionAddCardMessage(
+                                              widget.transaction.transactionID,
+                                              card.id,
                                             ),
-                                          )
-                                        : Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: OutlinedButton(
-                                              onPressed: () async {
-                                                print(
-                                                  await widget.client.sendMessage(
-                                                    PIMPTransactionAddPropertyMessage(
-                                                      widget
-                                                          .transaction
-                                                          .transactionID,
-                                                      property.id,
-                                                    ),
-                                                    [0xfe, 0xe5, 0xfc],
-                                                    true,
-                                                  ),
-                                                );
-                                              },
-                                              child: Text('Offer'),
-                                            ),
+                                            [0xfe, 0xe5, 0xfc],
+                                            true,
                                           ),
+                                        );
+                                      },
+                                      child: Text('Offer'),
+                                    ),
                                   ],
                                 ],
                               ),
@@ -1664,92 +1752,52 @@ class _TransactionWidgetState extends State<TransactionWidget> {
                         },
                       );
                     },
-                    child: Text('Offer property'),
-                  ),
-                  OutlinedButton(
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) {
-                          return Dialog(
-                            child: Column(
-                              children: [
-                                OutlinedButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
-                                  child: Text('Close dialog'),
-                                ),
-                                Text('Offer card:'),
-                                for (Card card in widget.cards.values.where(
-                                  (e) => e.owner == widget.player,
-                                )) ...[
-                                  CardWidget(
-                                    card: card,
-                                    players: widget.players,
-                                    client: widget.client,
-                                  ),
-                                  OutlinedButton(
-                                    onPressed: () async {
-                                      print(
-                                        await widget.client.sendMessage(
-                                          PIMPTransactionAddCardMessage(
-                                            widget.transaction.transactionID,
-                                            card.id,
-                                          ),
-                                          [0xfe, 0xe5, 0xfc],
-                                          true,
-                                        ),
-                                      );
-                                    },
-                                    child: Text('Offer'),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          );
-                        },
-                      );
-                    },
                     child: Text('Offer card'),
                   ),
-                  OutlinedButton(
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) {
-                          return Dialog(
-                            child: Column(
-                              children: [
-                                OutlinedButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
-                                  child: Text('Close dialog'),
-                                ),
-                                Text('Offer cash:'),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: OutlinedButton(
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) {
+                            return Dialog(
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    OutlinedButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                      },
+                                      child: Text('Close dialog'),
+                                    ),
+                                    Text('Offer cash:'),
 
-                                TextField(
-                                  onSubmitted: (value) async {
-                                    print(
-                                      await widget.client.sendMessage(
-                                        PIMPTransactionSetCashMessage(
-                                          widget.transaction.transactionID,
-                                          int.parse(value),
-                                        ),
-                                        [0xfe, 0xfc],
-                                        true,
-                                      ),
-                                    );
-                                  },
+                                    TextField(
+                                      onSubmitted: (value) async {
+                                        print(
+                                          await widget.client.sendMessage(
+                                            PIMPTransactionSetCashMessage(
+                                              widget.transaction.transactionID,
+                                              int.parse(value),
+                                            ),
+                                            [0xfe, 0xfc],
+                                            true,
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                          );
-                        },
-                      );
-                    },
-                    child: Text('Offer cash'),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                      child: Text('Offer cash'),
+                    ),
                   ),
                 ],
                 if (!widget.transaction.finished)
@@ -1768,65 +1816,77 @@ class _TransactionWidgetState extends State<TransactionWidget> {
                     child: Text('Finish transaction'),
                   )
                 else if (!widget.transaction.agreed)
-                  OutlinedButton(
-                    onPressed: () async {
-                      print(
-                        await widget.client.sendMessage(
-                          PIMPTransactionAgreeMessage(
-                            widget.transaction.transactionID,
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
+                    child: OutlinedButton(
+                      onPressed: () async {
+                        print(
+                          await widget.client.sendMessage(
+                            PIMPTransactionAgreeMessage(
+                              widget.transaction.transactionID,
+                            ),
+                            [0xfe, 0xfc, 0xe8, 0xe9],
+                            true,
                           ),
-                          [0xfe, 0xfc, 0xe8, 0xe9],
-                          true,
-                        ),
-                      );
-                    },
-                    child: Text('Agree to transaction'),
+                        );
+                      },
+                      child: Text('Agree to transaction'),
+                    ),
                   )
                 else
                   Text('You have agreed.'),
                 if (widget.transaction.cancellable)
-                  OutlinedButton(
-                    onPressed: () async {
-                      print(
-                        await widget.client.sendMessage(
-                          PIMPTransactionCancelMessage(
-                            widget.transaction.transactionID,
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
+                    child: OutlinedButton(
+                      onPressed: () async {
+                        print(
+                          await widget.client.sendMessage(
+                            PIMPTransactionCancelMessage(
+                              widget.transaction.transactionID,
+                            ),
+                            [0xfe, 0xeb, 0xfc],
+                            true,
                           ),
-                          [0xfe, 0xeb, 0xfc],
-                          true,
-                        ),
-                      );
-                    },
-                    child: Text('Cancel transaction'),
+                        );
+                      },
+                      child: Text('Cancel transaction'),
+                    ),
                   ),
                 if (widget.transaction.finished)
-                  OutlinedButton(
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
+                    child: OutlinedButton(
+                      onPressed: () async {
+                        print(
+                          await widget.client.sendMessage(
+                            PIMPTransactionReopenMessage(
+                              widget.transaction.transactionID,
+                            ),
+                            [0xfe, 0xeb, 0xfc],
+                            true,
+                          ),
+                        );
+                      },
+                      child: Text('Reopen transaction'),
+                    ),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: OutlinedButton(
                     onPressed: () async {
                       print(
                         await widget.client.sendMessage(
-                          PIMPTransactionReopenMessage(
+                          PIMPBankruptTransactionMessage(
                             widget.transaction.transactionID,
                           ),
-                          [0xfe, 0xeb, 0xfc],
+                          [0xfe, 0xea, 0xfc],
                           true,
                         ),
                       );
                     },
-                    child: Text('Reopen transaction'),
+                    child: Text('Declare bankruptcy'),
                   ),
-                OutlinedButton(
-                  onPressed: () async {
-                    print(
-                      await widget.client.sendMessage(
-                        PIMPBankruptTransactionMessage(
-                          widget.transaction.transactionID,
-                        ),
-                        [0xfe, 0xea, 0xfc],
-                        true,
-                      ),
-                    );
-                  },
-                  child: Text('Declare bankruptcy'),
                 ),
               ],
             ),
