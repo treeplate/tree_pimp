@@ -67,6 +67,9 @@ class _MonopolyAppState extends State<MonopolyApp> {
   int? blockingTransaction;
   int? pot;
   bool? candidateWantsToPlay;
+  int? lastRoller;
+  int? die1;
+  int? die2;
 
   @override
   void initState() {
@@ -447,6 +450,10 @@ class _MonopolyAppState extends State<MonopolyApp> {
               turn = player;
             case PIMPDeltaPotMessage(pot: int pot):
               this.pot = pot;
+            case PIMPDiceRolledMessage(playerID: int playerID, die1: int die1, die2: int die2):
+              lastRoller = playerID;
+              this.die1 = die1;
+              this.die2 = die2;
             default:
               print(message);
           }
@@ -560,6 +567,7 @@ class _MonopolyAppState extends State<MonopolyApp> {
                                         child: Text('Refuse'),
                                       ),
                                     ],
+                                    if (lastRoller != null) Text('${players[lastRoller]} rolled a $die1 and a $die2.'),
                                     if (board != null)
                                       BuyHousesButton(
                                         board: board!,
