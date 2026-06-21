@@ -568,9 +568,9 @@ class _MonopolyAppState extends State<MonopolyApp> {
                                         players: players,
                                         client: client,
                                         canBuyHouses:
-                                            turn != player ||
-                                            state != .rollDice &&
-                                                state != .rollDiceJail,
+                                            turn == player &&
+                                            (state != .rollDice ||
+                                                state != .rollDiceJail),
                                       ),
                                     if (turn == player)
                                       ...switch (state) {
@@ -1013,7 +1013,7 @@ class BuyHousesButton extends StatelessWidget {
                     },
                     child: Text('Close dialog'),
                   ),
-                  Text('Buy houses:'),
+                  Text(canBuyHouses ? 'Buy/sell houses:' : 'Sell houses:'),
                   ...PropertyType.values
                       .where((PropertyType type) {
                         if (type == .railroad || type == .utility) {
@@ -1045,7 +1045,7 @@ class BuyHousesButton extends StatelessWidget {
           },
         );
       },
-      child: Text('Buy houses'),
+      child: Text(canBuyHouses ? 'Buy/sell houses' : 'Sell houses'),
     );
   }
 }
