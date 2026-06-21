@@ -70,6 +70,9 @@ class _MonopolyAppState extends State<MonopolyApp> {
   int? lastRoller;
   int? die1;
   int? die2;
+  List<int> passedSquares = [];
+  List<int> landedSquares = [];
+  bool startOfTurn = false;
 
   @override
   void initState() {
@@ -119,6 +122,7 @@ class _MonopolyAppState extends State<MonopolyApp> {
               player: int player,
               throwDice: bool throwDice,
             ):
+              startOfTurn = true;
               turn = player;
               if (throwDice) {
                 state = .rollDice;
@@ -372,11 +376,19 @@ class _MonopolyAppState extends State<MonopolyApp> {
             case PIMPDeltaCardMessage(newPlayer: int newPlayer, card: int card):
               cards[card] ??= Card(card, 0);
               cards[card]!.owner = newPlayer;
+            case PIMPPassingBySquareMessage(square: int square):
+              if (startOfTurn) {
+                passedSquares.clear();
+                landedSquares.clear();
+                startOfTurn = false;
+              }
+              passedSquares.add(square);
             case PIMPLandingOnSquareMessage(
               playerID: int playerID,
               square: int square,
             ):
               players[playerID]!.square = square;
+              landedSquares.add(square);
             case PIMPJailPayOrRollMessage(
               playerID: int playerID,
               rollsLeft: int rollsLeft,
@@ -796,6 +808,12 @@ class _MonopolyAppState extends State<MonopolyApp> {
                                   for (Square square in board!.squares)
                                     SquareWidget(
                                       square: square,
+                                      highlightColor:
+                                          landedSquares.contains(square.id)
+                                          ? Colors.greenAccent
+                                          : passedSquares.contains(square.id)
+                                          ? Colors.yellowAccent
+                                          : null,
                                       board: board!,
                                       ownedProperties: ownedProperties,
                                       players: players,
@@ -855,8 +873,8 @@ class _MonopolyAppState extends State<MonopolyApp> {
                                                   in ownedProperties.values)
                                                 if (property.owner == player.id)
                                                   SizedBox(
-                                                    width: 150,
-                                                    height: 150,
+                                                    width: 200,
+                                                    height: 200,
                                                     child: PropertyWidget(
                                                       propertyID: property.id,
                                                       property: property,
@@ -1211,6 +1229,7 @@ class SquareWidget extends StatelessWidget {
   const SquareWidget({
     super.key,
     required this.square,
+    this.highlightColor,
     required this.board,
     required this.ownedProperties,
     required this.players,
@@ -1220,6 +1239,7 @@ class SquareWidget extends StatelessWidget {
   });
 
   final Square square;
+  final Color? highlightColor;
   final Board board;
   final Map<int, Property> ownedProperties;
   final Map<int, Player> players;
@@ -1229,7 +1249,7 @@ class SquareWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    double size = 150;
+    double size = 200;
     if (square.type == .property) {
       Property? property = ownedProperties[square.propertyID];
       return SizedBox(
@@ -1238,6 +1258,7 @@ class SquareWidget extends StatelessWidget {
         child: PropertyWidget(
           board: board,
           propertyID: square.propertyID,
+          highlightColor: highlightColor,
           property: property,
           players: players,
           player: player,
@@ -1247,8 +1268,14 @@ class SquareWidget extends StatelessWidget {
     } else {
       return Container(
         width: size,
-        color: Colors.grey,
+        decoration: BoxDecoration(
+          color: Colors.grey,
+          border: highlightColor == null
+              ? null
+              : BoxBorder.all(color: highlightColor!, width: 5),
+        ),
         height: size,
+
         child: Column(
           children: [
             square.type == .freeParking
@@ -1282,9 +1309,12 @@ class SquareWidget extends StatelessWidget {
                     ],
                   )
                 : Text(square.toString()),
-
-            for (Player player in players.values)
-              if (player.square == square.id) PlayerWidget(player: player),
+            Wrap(
+              children: [
+                for (Player player in players.values)
+                  if (player.square == square.id) PlayerWidget(player: player),
+              ],
+            ),
           ],
         ),
       );
@@ -1296,6 +1326,7 @@ class PropertyWidget extends StatelessWidget {
   const PropertyWidget({
     super.key,
     required this.board,
+    this.highlightColor,
     required this.propertyID,
     required this.property,
     required this.players,
@@ -1304,6 +1335,7 @@ class PropertyWidget extends StatelessWidget {
   });
 
   final Board? board;
+  final Color? highlightColor;
   final int propertyID;
   final Property? property;
   final Map<int, Player> players;
@@ -1313,7 +1345,13 @@ class PropertyWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: propertyColors[board?.properties[propertyID].type] ?? Colors.white,
+      decoration: BoxDecoration(
+        color:
+            propertyColors[board?.properties[propertyID].type] ?? Colors.white,
+        border: highlightColor == null
+            ? null
+            : BoxBorder.all(color: highlightColor!, width: 5),
+      ),
 
       child: Column(
         children: [
@@ -1335,8 +1373,7 @@ class PropertyWidget extends StatelessWidget {
                 Icon(Icons.hotel, size: 20),
               ),
             ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          Wrap(
             children: [
               for (Player player in players.values)
                 if (board?.squares[player.square].propertyID == propertyID)
@@ -1345,82 +1382,100 @@ class PropertyWidget extends StatelessWidget {
           ),
           if (player != null && property?.owner == player) ...[
             if (!property!.mortgaged)
-              OutlinedButton(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) {
-                      return Dialog(
-                        child: Column(
-                          children: [
-                            OutlinedButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                              child: Text('Close dialog'),
-                            ),
-                            Text('Claim rent:'),
-                            for (Player player in players.values)
-                              if (player.id != this.player)
-                                OutlinedButton(
-                                  onPressed: () async {
-                                    print(
-                                      await client.sendMessage(
-                                        PIMPClaimRentMessage(
-                                          player.id,
-                                          propertyID,
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: OutlinedButton(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        return Dialog(
+                          child: Column(
+                            children: [
+                              OutlinedButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
+                                child: Text('Close dialog'),
+                              ),
+                              Text('Claim rent:'),
+                              for (Player player in players.values)
+                                if (player.id != this.player)
+                                  OutlinedButton(
+                                    onPressed: () async {
+                                      print(
+                                        await client.sendMessage(
+                                          PIMPClaimRentMessage(
+                                            player.id,
+                                            propertyID,
+                                          ),
+                                          [0xfe, 0xfc, 0xe0],
+                                          true,
                                         ),
-                                        [0xfe, 0xfc, 0xe0],
-                                        true,
-                                      ),
-                                    );
-                                  },
-                                  child: Text(
-                                    'Claim rent from player ${player.name}',
+                                      );
+                                    },
+                                    child: Text(
+                                      'Claim rent from player ${player.name}',
+                                    ),
                                   ),
-                                ),
-                          ],
-                        ),
-                      );
-                    },
-                  );
-                },
-                style: OutlinedButton.styleFrom(foregroundColor: Colors.black),
-                child: Text(
-                  'Claim rent',
-                  style: TextStyle(color: Colors.black),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.black,
+                  ),
+                  child: Text(
+                    'Claim rent',
+                    style: TextStyle(color: Colors.black, fontSize: 13),
+                  ),
                 ),
               ),
             if (property!.mortgaged)
-              OutlinedButton(
-                onPressed: () async {
-                  print(
-                    await client.sendMessage(
-                      PIMPUnmortgagePropertyMessage(propertyID),
-                      [0xfe, 0xfc, 0xe3],
-                      true,
-                    ),
-                  );
-                },
-                style: OutlinedButton.styleFrom(foregroundColor: Colors.black),
-                child: Text(
-                  'Unmortgage',
-                  style: TextStyle(color: Colors.black),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: OutlinedButton(
+                  onPressed: () async {
+                    print(
+                      await client.sendMessage(
+                        PIMPUnmortgagePropertyMessage(propertyID),
+                        [0xfe, 0xfc, 0xe3],
+                        true,
+                      ),
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.black,
+                  ),
+                  child: Text(
+                    'Unmortgage',
+                    style: TextStyle(color: Colors.black),
+                  ),
                 ),
               )
             else
-              OutlinedButton(
-                onPressed: () async {
-                  print(
-                    await client.sendMessage(
-                      PIMPMortgagePropertyMessage(propertyID),
-                      [0xfe, 0xfc],
-                      true,
-                    ),
-                  );
-                },
-                style: OutlinedButton.styleFrom(foregroundColor: Colors.black),
-                child: Text('Mortgage', style: TextStyle(color: Colors.black)),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: OutlinedButton(
+                  onPressed: () async {
+                    print(
+                      await client.sendMessage(
+                        PIMPMortgagePropertyMessage(propertyID),
+                        [0xfe, 0xfc],
+                        true,
+                      ),
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.black,
+                  ),
+                  child: Text(
+                    'Mortgage',
+                    style: TextStyle(color: Colors.black),
+                  ),
+                ),
               ),
           ] else if (property?.mortgaged ?? false)
             Text('Mortgaged.', style: TextStyle(color: Colors.black)),
@@ -1561,39 +1616,45 @@ class _TransactionWidgetState extends State<TransactionWidget> {
                                     widget.transaction.properties.contains(
                                           property.id,
                                         )
-                                        ? OutlinedButton(
-                                            onPressed: () async {
-                                              print(
-                                                await widget.client.sendMessage(
-                                                  PIMPTransactionRemovePropertyMessage(
-                                                    widget
-                                                        .transaction
-                                                        .transactionID,
-                                                    property.id,
+                                        ? Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: OutlinedButton(
+                                              onPressed: () async {
+                                                print(
+                                                  await widget.client.sendMessage(
+                                                    PIMPTransactionRemovePropertyMessage(
+                                                      widget
+                                                          .transaction
+                                                          .transactionID,
+                                                      property.id,
+                                                    ),
+                                                    [0xfe, 0xfc],
+                                                    true,
                                                   ),
-                                                  [0xfe, 0xfc],
-                                                  true,
-                                                ),
-                                              );
-                                            },
-                                            child: Text('Do not offer'),
+                                                );
+                                              },
+                                              child: Text('Do not offer'),
+                                            ),
                                           )
-                                        : OutlinedButton(
-                                            onPressed: () async {
-                                              print(
-                                                await widget.client.sendMessage(
-                                                  PIMPTransactionAddPropertyMessage(
-                                                    widget
-                                                        .transaction
-                                                        .transactionID,
-                                                    property.id,
+                                        : Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: OutlinedButton(
+                                              onPressed: () async {
+                                                print(
+                                                  await widget.client.sendMessage(
+                                                    PIMPTransactionAddPropertyMessage(
+                                                      widget
+                                                          .transaction
+                                                          .transactionID,
+                                                      property.id,
+                                                    ),
+                                                    [0xfe, 0xe5, 0xfc],
+                                                    true,
                                                   ),
-                                                  [0xfe, 0xe5, 0xfc],
-                                                  true,
-                                                ),
-                                              );
-                                            },
-                                            child: Text('Offer'),
+                                                );
+                                              },
+                                              child: Text('Offer'),
+                                            ),
                                           ),
                                   ],
                                 ],
