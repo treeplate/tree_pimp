@@ -1454,7 +1454,7 @@ class PropertyWidget extends StatelessWidget {
                   ),
                   child: Text(
                     'Claim rent',
-                    style: TextStyle(color: Colors.black, fontSize: 13),
+                    style: TextStyle(color: Colors.black),
                   ),
                 ),
               ),
