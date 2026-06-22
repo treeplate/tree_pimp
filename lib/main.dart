@@ -113,7 +113,7 @@ class _MonopolyAppState extends State<MonopolyApp> {
               this.candidateID = candidateID;
               candidateName = name;
             case PIMPStateBoardMessage(boardID: int boardID):
-              getBoard(boardID).then((Board parsedBoard) {
+              getBoard(boardID).then((Board? parsedBoard) {
                 setState(() {
                   board = parsedBoard;
                 });
@@ -524,459 +524,451 @@ class _MonopolyAppState extends State<MonopolyApp> {
         body: loggedIn == null
             ? CircularProgressIndicator()
             : loggedIn!
-            ? Builder(
-                builder: (context) {
-                  return SingleChildScrollView(
-                    child: Stack(
-                      children: [
-                        Column(
-                          children: [
-                            Center(
-                              child: SizedBox(
-                                width: 200,
-                                height: 200,
-                                child: ListView(
-                                  children: [
-                                    if (!players.containsKey(player))
-                                      OutlinedButton(
-                                        onPressed: () async {
-                                          print(
-                                            await client!.sendMessage(
-                                              PIMPSwitchPlayMessage(),
-                                              [0xfe, 0x10],
-                                            ),
-                                          );
-                                        },
-                                        child: Text('Join game'),
-                                      ),
-                                    if (candidateID != null) ...[
-                                      Center(
-                                        child: Text(
-                                          '$candidateName is requesting to ${candidateWantsToPlay! ? 'play' : 'observe'}',
-                                        ),
-                                      ),
-                                      OutlinedButton(
-                                        onPressed: () async {
-                                          print(
-                                            await client!.sendMessage(
-                                              PIMPAcceptJoinMessage(
-                                                candidateID!,
+            ? LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                      child: Stack(
+                        children: [
+                          Column(
+                            children: [
+                              Center(
+                                child: SizedBox(
+                                  width: 200,
+                                  height: 200,
+                                  child: ListView(
+                                    children: [
+                                      if (!players.containsKey(player))
+                                        OutlinedButton(
+                                          onPressed: () async {
+                                            print(
+                                              await client!.sendMessage(
+                                                PIMPSwitchPlayMessage(),
+                                                [0xfe, 0x10],
                                               ),
-                                              [0xfe, 0xfc],
-                                              true,
-                                            ),
-                                          );
-                                          candidateName = null;
-                                          candidateID = null;
-                                        },
-                                        child: Text('Accept'),
-                                      ),
-                                      OutlinedButton(
-                                        onPressed: () async {
-                                          print(
-                                            await client!.sendMessage(
-                                              PIMPRefuseJoinMessage(
-                                                candidateID!,
+                                            );
+                                          },
+                                          child: Text('Join game'),
+                                        ),
+                                      if (candidateID != null) ...[
+                                        Center(
+                                          child: Text(
+                                            '$candidateName is requesting to ${candidateWantsToPlay! ? 'play' : 'observe'}',
+                                          ),
+                                        ),
+                                        OutlinedButton(
+                                          onPressed: () async {
+                                            print(
+                                              await client!.sendMessage(
+                                                PIMPAcceptJoinMessage(candidateID!),
+                                                [0xfe, 0xfc],
+                                                true,
                                               ),
-                                              [0xfe],
-                                              true,
-                                            ),
-                                          );
-                                          candidateName = null;
-                                          candidateID = null;
-                                        },
-                                        child: Text('Refuse'),
-                                      ),
-                                    ],
-                                    if (lastCardReceiver != null)
-                                      Text(
-                                        '${players[lastCardReceiver]?.name ?? 'Player $lastCardReceiver'} received card ${board == null ? '$cardReceived' : '"${board!.cards[cardReceived!]}"'}',
-                                      ),
-                                    if (lastRoller != null)
-                                      Text(
-                                        '${players[lastRoller]?.name ?? 'Player $lastRoller'} rolled a $die1 and a $die2.',
-                                      ),
-                                    if (board != null)
-                                      BuyHousesButton(
-                                        board: board!,
-                                        ownedProperties: ownedProperties,
-                                        player: player,
-                                        players: players,
-                                        client: client,
-                                        canBuyHouses:
-                                            turn == player &&
-                                            (state != .rollDice ||
-                                                state != .rollDiceJail),
-                                      ),
-                                    if (turn == player)
-                                      ...switch (state) {
-                                        null => [CircularProgressIndicator()],
-                                        .rollDice => [
-                                          OutlinedButton(
-                                            onPressed: () async {
-                                              print(
-                                                await client!.sendMessage(
-                                                  PIMPThrowDiceMessage(),
-                                                  [0xfe],
-                                                  true,
-                                                ),
-                                              );
-                                            },
-                                            child: Text('Roll dice'),
-                                          ),
-                                        ],
-                                        .buyProperty => [
-                                          Center(
-                                            child: Text(
-                                              'You can buy or auction ${propertyName(propertyForSale!)} for \$$propertyCost',
-                                            ),
-                                          ),
-                                          OutlinedButton(
-                                            onPressed: () async {
-                                              print(
-                                                await client!.sendMessage(
-                                                  PIMPBuyPropertyMessage(),
-                                                  [0xfe, 0xe2, 0xee],
-                                                  true,
-                                                ),
-                                              );
-                                            },
-                                            child: Text('Buy property'),
-                                          ),
-                                          OutlinedButton(
-                                            onPressed: () async {
-                                              print(
-                                                await client!.sendMessage(
-                                                  PIMPAuctionPropertyMessage(),
-                                                  [0xfe],
-                                                  true,
-                                                ),
-                                              );
-                                            },
-                                            child: Text('Auction property'),
-                                          ),
-                                        ],
-                                        .rollDiceJail => [
-                                          Center(
-                                            child: Column(
-                                              children: [
-                                                Text(
-                                                  'It is your turn, but you are in jail',
-                                                ),
-                                                if (jailRolls != 0)
-                                                  OutlinedButton(
-                                                    onPressed: () async {
-                                                      print(
-                                                        await client!.sendMessage(
-                                                          PIMPJailRollDiceMessage(),
-                                                          [0xfe],
-                                                          true,
-                                                        ),
-                                                      );
-                                                    },
-                                                    child: Text(
-                                                      'Roll dice ($jailRolls rolls left)',
-                                                    ),
-                                                  ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                        .transaction => [
-                                          Center(
-                                            child: Column(
-                                              children: [
-                                                Text(
-                                                  'You have to complete transaction $blockingTransaction.',
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                        .taxSelectOption => [
-                                          Text(
-                                            'You must pay income tax, select an option:',
-                                          ),
-                                          OutlinedButton(
-                                            onPressed: () async {
-                                              print(
-                                                await client!.sendMessage(
-                                                  PIMPTaxPayTenPercentMessage(),
-                                                  [0xfe],
-                                                  true,
-                                                ),
-                                              );
-                                            },
-                                            child: Text(
-                                              'Pay 10% of your net worth',
-                                            ),
-                                          ),
-                                          OutlinedButton(
-                                            onPressed: () async {
-                                              print(
-                                                await client!.sendMessage(
-                                                  PIMPTaxPayFlatFeeMessage(),
-                                                  [0xfe],
-                                                  true,
-                                                ),
-                                              );
-                                            },
-                                            child: Text('Pay \$200'),
-                                          ),
-                                        ],
-                                        .won => [Text('You have won.')],
-                                        .propertyAuction => [],
-                                      }
-                                    else if (turn != null)
-                                      Center(
-                                        child: Text(
-                                          'It is ${players[turn]?.name}\'s turn to ${stateVerb()}.',
+                                            );
+                                            candidateName = null;
+                                            candidateID = null;
+                                          },
+                                          child: Text('Accept'),
                                         ),
-                                      ),
-                                    if (state == .propertyAuction)
-                                      Center(
-                                        child: Text(
-                                          'Bidding for ${propertyName(propertyForSale!)} ${lastBid != null ? '(last bid: ${players[lastBidder]!.name} bid \$$lastBid)' : ''}',
+                                        OutlinedButton(
+                                          onPressed: () async {
+                                            print(
+                                              await client!.sendMessage(
+                                                PIMPRefuseJoinMessage(candidateID!),
+                                                [0xfe],
+                                                true,
+                                              ),
+                                            );
+                                            candidateName = null;
+                                            candidateID = null;
+                                          },
+                                          child: Text('Refuse'),
                                         ),
-                                      ),
-
-                                    if (state == .propertyAuction) ...[
-                                      OutlinedButton(
-                                        onPressed: () {
-                                          showDialog(
-                                            context: context,
-                                            builder: (context) {
-                                              return Dialog(
-                                                child: Padding(
-                                                  padding: const EdgeInsets.all(
-                                                    8.0,
-                                                  ),
-                                                  child: Column(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    children: [
-                                                      OutlinedButton(
-                                                        onPressed: () {
-                                                          Navigator.pop(
-                                                            context,
-                                                          );
-                                                        },
-                                                        child: Text(
-                                                          'Close dialog',
-                                                        ),
-                                                      ),
-                                                      Text(
-                                                        'Bidding for ${propertyName(propertyForSale!)}',
-                                                      ),
-                                                      Text(
-                                                        'Your money: \$${players[player]!.cash}',
-                                                      ),
-                                                      Text(
-                                                        'Last bid: \$$lastBid by ${players[lastBidder]!.name}',
-                                                      ),
-                                                      Text(
-                                                        'Bid (press enter to bid):',
-                                                      ),
-                                                      TextField(
-                                                        onSubmitted: (value) async {
-                                                          Navigator.pop(
-                                                            context,
-                                                          );
-                                                          print(
-                                                            await client!
-                                                                .sendMessage(
-                                                                  PIMPBidMessage(
-                                                                    int.parse(
-                                                                      value,
-                                                                    ),
-                                                                  ),
-                                                                  [0xfe],
-                                                                  true,
-                                                                ),
-                                                          );
-                                                        },
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              );
-                                            },
-                                          );
-                                        },
-                                        child: Text('Bid'),
-                                      ),
-                                      OutlinedButton(
-                                        onPressed: () async {
-                                          print(
-                                            await client!.sendMessage(
-                                              PIMPNoBidMessage(),
-                                              [0xfe, 0xfc],
-                                              true,
-                                            ),
-                                          );
-                                        },
-                                        child: Text('No Bid'),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                            ),
-                            if (board != null)
-                              Wrap(
-                                children: [
-                                  for (Square square in board!.squares)
-                                    SquareWidget(
-                                      square: square,
-                                      highlightColor:
-                                          landedSquares.contains(square.id)
-                                          ? Colors.greenAccent
-                                          : passedSquares.contains(square.id)
-                                          ? Colors.yellowAccent
-                                          : null,
-                                      board: board!,
-                                      ownedProperties: ownedProperties,
-                                      players: players,
-                                      player: player,
-                                      pot: pot,
-                                      client: client!,
-                                    ),
-                                ],
-                              ),
-                            SingleChildScrollView(
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  for (Player player in players.values)
-                                    Expanded(
-                                      child: Column(
-                                        children: [
-                                          if (showPiece)
-                                            Text(
-                                              'Player ${player.name} uses piece ${player.piece}, and has \$${player.cash}.',
-                                            )
-                                          else
-                                            Text(
-                                              'Player ${player.name} has \$${player.cash}.',
-                                            ),
-                                          if (player.id != this.player)
+                                      ],
+                                      if (lastCardReceiver != null)
+                                        Text(
+                                          '${players[lastCardReceiver]?.name ?? 'Player $lastCardReceiver'} received card ${board == null ? '$cardReceived' : '"${board!.cards[cardReceived!]}"'}',
+                                        ),
+                                      if (lastRoller != null)
+                                        Text(
+                                          '${players[lastRoller]?.name ?? 'Player $lastRoller'} rolled a $die1 and a $die2.',
+                                        ),
+                                      if (board != null)
+                                        BuyHousesButton(
+                                          board: board!,
+                                          ownedProperties: ownedProperties,
+                                          player: player,
+                                          players: players,
+                                          client: client,
+                                          canBuyHouses:
+                                              turn == player &&
+                                              (state != .rollDice ||
+                                                  state != .rollDiceJail),
+                                        ),
+                                      if (turn == player)
+                                        ...switch (state) {
+                                          null => [CircularProgressIndicator()],
+                                          .rollDice => [
                                             OutlinedButton(
                                               onPressed: () async {
                                                 print(
                                                   await client!.sendMessage(
-                                                    PIMPTransactionRequestTradeMessage(
-                                                      player.id,
-                                                    ),
-                                                    [0xfe, 0xfc],
+                                                    PIMPThrowDiceMessage(),
+                                                    [0xfe],
                                                     true,
                                                   ),
                                                 );
                                               },
-                                              child: Text('Request trade'),
+                                              child: Text('Roll dice'),
                                             ),
-
-                                          Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: OutlinedButton(
+                                          ],
+                                          .buyProperty => [
+                                            Center(
+                                              child: Text(
+                                                'You can buy or auction ${propertyName(propertyForSale!)} for \$$propertyCost',
+                                              ),
+                                            ),
+                                            OutlinedButton(
                                               onPressed: () async {
                                                 print(
                                                   await client!.sendMessage(
-                                                    PIMPKickMessage(player.id),
-                                                    [0xfe, 0xfc],
+                                                    PIMPBuyPropertyMessage(),
+                                                    [0xfe, 0xe2, 0xee],
                                                     true,
                                                   ),
                                                 );
                                               },
-                                              child: Text('Kick'),
+                                              child: Text('Buy property'),
                                             ),
+                                            OutlinedButton(
+                                              onPressed: () async {
+                                                print(
+                                                  await client!.sendMessage(
+                                                    PIMPAuctionPropertyMessage(),
+                                                    [0xfe],
+                                                    true,
+                                                  ),
+                                                );
+                                              },
+                                              child: Text('Auction property'),
+                                            ),
+                                          ],
+                                          .rollDiceJail => [
+                                            Center(
+                                              child: Column(
+                                                children: [
+                                                  Text(
+                                                    'It is your turn, but you are in jail',
+                                                  ),
+                                                  if (jailRolls != 0)
+                                                    OutlinedButton(
+                                                      onPressed: () async {
+                                                        print(
+                                                          await client!.sendMessage(
+                                                            PIMPJailRollDiceMessage(),
+                                                            [0xfe],
+                                                            true,
+                                                          ),
+                                                        );
+                                                      },
+                                                      child: Text(
+                                                        'Roll dice ($jailRolls rolls left)',
+                                                      ),
+                                                    ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                          .transaction => [
+                                            Center(
+                                              child: Column(
+                                                children: [
+                                                  Text(
+                                                    'You have to complete transaction $blockingTransaction.',
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                          .taxSelectOption => [
+                                            Text(
+                                              'You must pay income tax, select an option:',
+                                            ),
+                                            OutlinedButton(
+                                              onPressed: () async {
+                                                print(
+                                                  await client!.sendMessage(
+                                                    PIMPTaxPayTenPercentMessage(),
+                                                    [0xfe],
+                                                    true,
+                                                  ),
+                                                );
+                                              },
+                                              child: Text(
+                                                'Pay 10% of your net worth',
+                                              ),
+                                            ),
+                                            OutlinedButton(
+                                              onPressed: () async {
+                                                print(
+                                                  await client!.sendMessage(
+                                                    PIMPTaxPayFlatFeeMessage(),
+                                                    [0xfe],
+                                                    true,
+                                                  ),
+                                                );
+                                              },
+                                              child: Text('Pay \$200'),
+                                            ),
+                                          ],
+                                          .won => [Text('You have won.')],
+                                          .propertyAuction => [],
+                                        }
+                                      else if (turn != null)
+                                        Center(
+                                          child: Text(
+                                            'It is ${players[turn]?.name}\'s turn to ${stateVerb()}.',
                                           ),
-                                          Wrap(
-                                            children: [
-                                              for (Property property
-                                                  in ownedProperties.values)
-                                                if (property.owner == player.id)
-                                                  SizedBox(
-                                                    width: 200,
-                                                    height: 200,
-                                                    child: PropertyWidget(
-                                                      propertyID: property.id,
-                                                      property: property,
-                                                      player: this.player,
-                                                      players: players,
-                                                      board: board,
-                                                      client: client!,
+                                        ),
+                                      if (state == .propertyAuction)
+                                        Center(
+                                          child: Text(
+                                            'Bidding for ${propertyName(propertyForSale!)} ${lastBid != null ? '(last bid: ${players[lastBidder]!.name} bid \$$lastBid)' : ''}',
+                                          ),
+                                        ),
+                                      
+                                      if (state == .propertyAuction) ...[
+                                        OutlinedButton(
+                                          onPressed: () {
+                                            showDialog(
+                                              context: context,
+                                              builder: (context) {
+                                                return Dialog(
+                                                  child: Padding(
+                                                    padding: const EdgeInsets.all(
+                                                      8.0,
+                                                    ),
+                                                    child: Column(
+                                                      mainAxisSize: MainAxisSize.min,
+                                                      children: [
+                                                        OutlinedButton(
+                                                          onPressed: () {
+                                                            Navigator.pop(context);
+                                                          },
+                                                          child: Text('Close dialog'),
+                                                        ),
+                                                        Text(
+                                                          'Bidding for ${propertyName(propertyForSale!)}',
+                                                        ),
+                                                        Text(
+                                                          'Your money: \$${players[player]!.cash}',
+                                                        ),
+                                                        Text(
+                                                          'Last bid: \$$lastBid by ${players[lastBidder]!.name}',
+                                                        ),
+                                                        Text(
+                                                          'Bid (press enter to bid):',
+                                                        ),
+                                                        TextField(
+                                                          onSubmitted: (value) async {
+                                                            Navigator.pop(context);
+                                                            print(
+                                                              await client!
+                                                                  .sendMessage(
+                                                                    PIMPBidMessage(
+                                                                      int.parse(
+                                                                        value,
+                                                                      ),
+                                                                    ),
+                                                                    [0xfe],
+                                                                    true,
+                                                                  ),
+                                                            );
+                                                          },
+                                                        ),
+                                                      ],
                                                     ),
                                                   ),
-                                            ],
-                                          ),
-                                          for (Card card in cards.values)
-                                            if (card.owner == player.id)
-                                              CardWidget(
-                                                card: card,
-                                                players: players,
-                                                client: client,
-                                                board: board,
+                                                );
+                                              },
+                                            );
+                                          },
+                                          child: Text('Bid'),
+                                        ),
+                                        OutlinedButton(
+                                          onPressed: () async {
+                                            print(
+                                              await client!.sendMessage(
+                                                PIMPNoBidMessage(),
+                                                [0xfe, 0xfc],
+                                                true,
                                               ),
-                                        ],
-                                      ),
-                                    ),
-                                ],
+                                            );
+                                          },
+                                          child: Text('No Bid'),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
                               ),
-                            ),
-                            SingleChildScrollView(
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  for (Observer observer in observers.values)
-                                    Expanded(
-                                      child: Column(
-                                        children: [
-                                          if (showPiece)
-                                            Text(
-                                              'Observer ${observer.name} uses piece ${observer.piece}.',
-                                            )
-                                          else
-                                            Text('Observer ${observer.name}'),
-                                          OutlinedButton(
-                                            onPressed: players[player] != null
-                                                ? () async {
-                                                    print(
-                                                      await client!.sendMessage(
-                                                        PIMPTransferMessage(
-                                                          observer.id,
-                                                        ),
-                                                        [0xfe, 0xfc, 0xec],
-                                                        true,
+                              if (board != null)
+                                Wrap(
+                                  children: [
+                                    for (Square square in board!.squares)
+                                      SquareWidget(
+                                        square: square,
+                                        highlightColor:
+                                            landedSquares.contains(square.id)
+                                            ? Colors.greenAccent
+                                            : passedSquares.contains(square.id)
+                                            ? Colors.yellowAccent
+                                            : null,
+                                        board: board!,
+                                        ownedProperties: ownedProperties,
+                                        players: players,
+                                        player: player,
+                                        pot: pot,
+                                        client: client!,
+                                      ),
+                                  ],
+                                ),
+                              SingleChildScrollView(
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    for (Player player in players.values)
+                                      Expanded(
+                                        child: Column(
+                                          children: [
+                                            if (showPiece)
+                                              Text(
+                                                'Player ${player.name} uses piece ${player.piece}, and has \$${player.cash}.',
+                                              )
+                                            else
+                                              Text(
+                                                'Player ${player.name} has \$${player.cash}.',
+                                              ),
+                                            if (player.id != this.player)
+                                              OutlinedButton(
+                                                onPressed: () async {
+                                                  print(
+                                                    await client!.sendMessage(
+                                                      PIMPTransactionRequestTradeMessage(
+                                                        player.id,
                                                       ),
-                                                    );
-                                                  }
-                                                : null,
-                                            child: Text('Transfer to observer'),
-                                          ),
-                                        ],
+                                                      [0xfe, 0xfc],
+                                                      true,
+                                                    ),
+                                                  );
+                                                },
+                                                child: Text('Request trade'),
+                                              ),
+                                      
+                                            Padding(
+                                              padding: const EdgeInsets.all(8.0),
+                                              child: OutlinedButton(
+                                                onPressed: () async {
+                                                  print(
+                                                    await client!.sendMessage(
+                                                      PIMPKickMessage(player.id),
+                                                      [0xfe, 0xfc],
+                                                      true,
+                                                    ),
+                                                  );
+                                                },
+                                                child: Text('Kick'),
+                                              ),
+                                            ),
+                                            Wrap(
+                                              children: [
+                                                for (Property property
+                                                    in ownedProperties.values)
+                                                  if (property.owner == player.id)
+                                                    SizedBox(
+                                                      width: 200,
+                                                      height: 200,
+                                                      child: PropertyWidget(
+                                                        propertyID: property.id,
+                                                        property: property,
+                                                        player: this.player,
+                                                        players: players,
+                                                        board: board,
+                                                        client: client!,
+                                                      ),
+                                                    ),
+                                              ],
+                                            ),
+                                            for (Card card in cards.values)
+                                              if (card.owner == player.id)
+                                                CardWidget(
+                                                  card: card,
+                                                  players: players,
+                                                  client: client,
+                                                  board: board,
+                                                ),
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                        for (Transaction transaction in transactions.values)
-                          TransactionWidget(
-                            key: Key(transaction.transactionID.toString()),
-                            player: player,
-                            players: players,
-                            transaction: transaction,
-                            ownedProperties: ownedProperties,
-                            cards: cards,
-                            client: client!,
-                            board: board,
+                              SingleChildScrollView(
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    for (Observer observer in observers.values)
+                                      Expanded(
+                                        child: Column(
+                                          children: [
+                                            if (showPiece)
+                                              Text(
+                                                'Observer ${observer.name} uses piece ${observer.piece}.',
+                                              )
+                                            else
+                                              Text('Observer ${observer.name}'),
+                                            OutlinedButton(
+                                              onPressed: players[player] != null
+                                                  ? () async {
+                                                      print(
+                                                        await client!.sendMessage(
+                                                          PIMPTransferMessage(
+                                                            observer.id,
+                                                          ),
+                                                          [0xfe, 0xfc, 0xec],
+                                                          true,
+                                                        ),
+                                                      );
+                                                    }
+                                                  : null,
+                                              child: Text('Transfer to observer'),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                      ],
+                          for (Transaction transaction in transactions.values)
+                            TransactionWidget(
+                              key: Key(transaction.transactionID.toString()),
+                              player: player,
+                              players: players,
+                              transaction: transaction,
+                              ownedProperties: ownedProperties,
+                              cards: cards,
+                              client: client!,
+                              board: board,
+                            ),
+                        ],
+                      ),
                     ),
                   );
-                },
-              )
+              }
+            )
             : joinPending
             ? Text('Waiting for players to accept you...')
             : Column(

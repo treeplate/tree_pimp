@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 enum SquareType {
@@ -87,18 +88,28 @@ class BoardProperty {
     List<String> parts = propertyStr.split('/');
     PropertyType type;
     switch (parts[1]) {
-       case 'Red': type = .red;
-       case 'Orange': type = .orange;
-       case 'Yellow': type = .yellow;
-       case 'Green': type = .green;
-       case 'Light Blue': type = .lightBlue;
-       case 'Dark Blue': type = .darkBlue;
-       case 'Purple': type = .purple;
-       case 'Pink': type = .pink;
-       case 'Railroad': type = .railroad;
-       case 'Utility': type = .utility;
-       default:
-       throw FormatException('invalid property type ${propertyStr[1]}');
+      case 'Red':
+        type = .red;
+      case 'Orange':
+        type = .orange;
+      case 'Yellow':
+        type = .yellow;
+      case 'Green':
+        type = .green;
+      case 'Light Blue':
+        type = .lightBlue;
+      case 'Dark Blue':
+        type = .darkBlue;
+      case 'Purple':
+        type = .purple;
+      case 'Pink':
+        type = .pink;
+      case 'Railroad':
+        type = .railroad;
+      case 'Utility':
+        type = .utility;
+      default:
+        throw FormatException('invalid property type ${propertyStr[1]}');
     }
     return BoardProperty(id, parts[0], type);
   }
@@ -128,15 +139,23 @@ class Board {
   Board(this.squares, this.properties, this.cards);
 }
 
-Future<Board> getBoard(int boardID) async {
-  String rawBoard = await rootBundle.loadString('$boardID.brd');
+Future<Board?> getBoard(int boardID) async {
+  String rawBoard;
+  try {
+    rawBoard = await rootBundle.loadString('$boardID.brd');
+  } on FlutterError {
+    return null;
+  }
   List<String> parts = rawBoard.split('\n\n');
   int squareCounter = 0;
   int propertyCounter = 0;
   int cardCounter = 0;
   return Board(
     parts[0].split('\n').map((e) => Square.parse(squareCounter++, e)).toList(),
-    parts[1].split('\n').map((e) => BoardProperty.parse(propertyCounter++, e)).toList(),
+    parts[1]
+        .split('\n')
+        .map((e) => BoardProperty.parse(propertyCounter++, e))
+        .toList(),
     parts[2].split('\n').map((e) => BoardCard(cardCounter++, e)).toList(),
   );
 }
